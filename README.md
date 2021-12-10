@@ -2,6 +2,7 @@
 
 # This api is a simple service for management a little library.
 
+#### Teofilo Beloti
 
 ### Reference Documentation
 For further reference, please consider the following sections:
