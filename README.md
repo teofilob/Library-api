@@ -1,6 +1,7 @@
 # Library-api
 
-# Getting Started
+# This api is a simple service for management a little library.
+
 
 ### Reference Documentation
 For further reference, please consider the following sections:
