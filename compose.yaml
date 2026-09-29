@@ -1,0 +1,24 @@
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/libraryDb;DB_CLOSE_ON_EXIT=FALSE
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    volumes:
+      - library-data:/data
+    restart: unless-stopped
+
+  maven:
+    image: maven:3.9-eclipse-temurin-25
+    profiles: ["tools"]
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - maven-cache:/root/.m2
+    command: ["mvn", "-B", "-ntp", "clean", "install"]
+
+volumes:
+  library-data:
+  maven-cache:

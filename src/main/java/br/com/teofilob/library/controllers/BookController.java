@@ -1,10 +1,10 @@
 package br.com.teofilob.library.controllers;
 
 import java.net.URI;
-import java.net.URISyntaxException;
+
 import java.util.List;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,16 +18,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.teofilob.library.dto.BookDTO;
-import br.com.teofilob.library.exception.BookNoContentErrorException;
+import br.com.teofilob.library.dto.BookResponse;
+import br.com.teofilob.library.dto.CreateBookRequest;
+
 import br.com.teofilob.library.exception.BookNotFoundException;
 import br.com.teofilob.library.service.BookService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
-@Api("Manages Library")
+@Tag(name = "Manages Library")
 @RestController
 @RequestMapping(value = "/api/v1/books")
 public class BookController {
@@ -35,58 +36,53 @@ public class BookController {
 	@Autowired
 	private BookService bookService;
 	
-	@ApiOperation(value = "Book creation operation")
+	@Operation(summary = "Book creation operation")
 	@ApiResponses(value = {
-            @ApiResponse(code = 201, message = "Success book creation"),
-            @ApiResponse(code = 400, message = "Missing required fields or wrong field range value.")
+            @ApiResponse(responseCode = "201", description = "Success book creation"),
+            @ApiResponse(responseCode = "400", description = "Missing required fields or wrong field range value.")
     })
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public ResponseEntity<BookDTO> created(@RequestBody @Valid BookDTO book) throws URISyntaxException{
-		book =	this.bookService.save(book);
-		URI uri = new URI("/books/"+book.getId());
+	public ResponseEntity<BookResponse> created(@RequestBody @Valid CreateBookRequest request){
+		BookResponse book = this.bookService.save(request);
+		URI uri = URI.create("/api/v1/books/" + book.id());
 		return ResponseEntity.created(uri).body(book);
 	}
 	
-	@ApiOperation(value = "Returns a list of all book registered in the system")
+	@Operation(summary = "Returns a list of all book registered in the system")
 	@ApiResponses(value = {
-			@ApiResponse(code = 200, message = "List of all book registered in the system"),
+			@ApiResponse(responseCode = "200", description = "List of all book registered in the system"),
 	    })
 	@GetMapping
 	@ResponseStatus(HttpStatus.OK)
-	public ResponseEntity<List<BookDTO>>list(){
-		List<BookDTO> list = this.bookService.listAll();
+	public ResponseEntity<List<BookResponse>>list(){
+		List<BookResponse> list = this.bookService.listAll();
 		return ResponseEntity.ok(list);
 	}
 	
-	@ApiOperation(value = "Returns book found by a given id")
+	@Operation(summary = "Returns book found by a given id")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success book found in the system"),
-            @ApiResponse(code = 404, message = "Book with given name not found.")
+            @ApiResponse(responseCode = "200", description = "Success book found in the system"),
+            @ApiResponse(responseCode = "404", description = "Book with given name not found.")
     })
 	@GetMapping("/{id}")
 	@ResponseStatus(HttpStatus.OK)
-	public ResponseEntity<BookDTO> getBook( @PathVariable long id ) throws BookNotFoundException {
+	public ResponseEntity<BookResponse> getBook( @PathVariable long id ) throws BookNotFoundException {
 		
-		BookDTO book = this.bookService.getById(id);
+		BookResponse book = this.bookService.getById(id);
 		
 		return ResponseEntity.ok(book);
 	}
 	
-	@ApiOperation(value = "Delete a book found by a given valid Id")
+	@Operation(summary = "Delete a book found by a given valid Id")
     @ApiResponses(value = {
-            @ApiResponse(code = 204, message = "Success book deleted in the system"),
-            @ApiResponse(code = 404, message = "Book with given id not found.")
+            @ApiResponse(responseCode = "204", description = "Success book deleted in the system"),
+            @ApiResponse(responseCode = "404", description = "Book with given id not found.")
     })
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public ResponseEntity<?> deleleBook( @PathVariable long id, @RequestBody @Valid BookDTO book) throws BookNoContentErrorException {
-		
-		if(book == null ||  book.getId() != id) {
-			return  ResponseEntity.badRequest().build();
-		}
-		
-		this.bookService.delete(book);
-		return  ResponseEntity.noContent().build();
-	}
+	public ResponseEntity<Void> deleteBook(@PathVariable long id) throws BookNotFoundException {
+        this.bookService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }
