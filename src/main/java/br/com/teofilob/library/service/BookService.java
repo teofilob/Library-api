@@ -1,56 +1,43 @@
 package br.com.teofilob.library.service;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import br.com.teofilob.library.dto.BookDTO;
+import br.com.teofilob.library.dto.BookResponse;
+import br.com.teofilob.library.dto.CreateBookRequest;
 import br.com.teofilob.library.entity.Book;
-import br.com.teofilob.library.exception.BookNoContentErrorException;
 import br.com.teofilob.library.exception.BookNotFoundException;
 import br.com.teofilob.library.mapper.BookMapper;
 import br.com.teofilob.library.repository.BookRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Service
-@AllArgsConstructor(onConstructor = @__(@Autowired))
-public class BookService  {
+@RequiredArgsConstructor
+public class BookService {
+    private final BookMapper bookMapper = BookMapper.INSTANCE;
+    private final BookRepository bookRepository;
 
-	private final BookMapper bookMapper = BookMapper.INSTANCE;
-	 
+    public BookResponse save(CreateBookRequest request) {
+        Book book = bookMapper.toModel(request);
+        return bookMapper.toDTO(bookRepository.save(book));
+    }
 
-	private BookRepository bookRepository;
-	
+    public List<BookResponse> listAll() {
+        return bookRepository.findAll().stream().map(bookMapper::toDTO).toList();
+    }
 
-	public BookDTO save(BookDTO bookDTO) {
-		
-		Book book = bookMapper.toModel(bookDTO);
-		book = this.bookRepository.save(book); 
-		return bookMapper.toDTO(book);
-	}
+    public BookResponse getById(Long id) throws BookNotFoundException {
+        return bookMapper.toDTO(findBook(id));
+    }
 
-	public List<BookDTO> listAll(){
-		return  this.bookRepository.findAll().stream().map( bookMapper:: toDTO ).collect(Collectors.toList()); 
-	}
-	
-	public BookDTO getById(Long id) throws BookNotFoundException {
-		Optional<Book> book = this.bookRepository.findById(id);
-		return book.map(bookMapper:: toDTO).orElseThrow( () -> new BookNotFoundException(id) ) ;
-	}
+    @Transactional
+    public void delete(long id) throws BookNotFoundException {
+        bookRepository.delete(findBook(id));
+    }
 
-	public boolean delete(BookDTO bookDTO) throws BookNoContentErrorException {
-		boolean isDeleted = false;
-		Optional<Book> book = this.bookRepository.findById(bookDTO.getId());
-		if (book.isPresent() ) {
-			this.bookRepository.delete(book.get());
-			isDeleted = true;
-		}else {
-			throw new BookNoContentErrorException(bookDTO.getId());
-		}
-		return  isDeleted;
-	}
-	
+    private Book findBook(long id) throws BookNotFoundException {
+        return bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException(id));
+    }
 }
